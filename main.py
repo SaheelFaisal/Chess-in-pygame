@@ -160,7 +160,7 @@ class Square:
             return ((self.get_position()[0] + 8), (self.get_position()[1] + 4))
         
         else:
-            return ((self.get_position()[0] + 8), (self.get_position()[1] + 4))
+            return ((self.get_position()[0] + 8), (self.get_position()[1] + 4)) 
 
 class Board:
     def __init__(self):
