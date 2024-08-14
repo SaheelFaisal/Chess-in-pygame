@@ -5,11 +5,13 @@ pygame.init()
 # Constants
 WIDTH = 720
 HEIGHT = 720
-SQUARE_LENGTH = 90
+SQUARE_SIZE = 90
 PIECE_SIZE = (59, 70)
 
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
+GREEN = (0, 255, 0)
+BLUE = (0, 0, 255)
 
 DARK_SQUARES = ('a1', 'a3', 'a5', 'a7', 
                 'b2', 'b4', 'b6', 'b8', 
@@ -63,9 +65,10 @@ BLACK_KING = pygame.image.load("assets/b_king.png").convert_alpha()
 
 class Square:
     def __init__(self, name):
-        self.length = SQUARE_LENGTH
+        self.length = SQUARE_SIZE
         self.name = name
         self.piece = None
+        self.border = None
 
         if self.name in DARK_SQUARES:
             self.color = "dark"
@@ -124,6 +127,10 @@ class Square:
     
     def draw(self):
         WIN.blit(self.img, self.get_position())
+
+        if self.border:
+            pygame.draw.rect(WIN, self.border, pygame.Rect(self.get_position()[0], self.get_position()[1], SQUARE_SIZE, SQUARE_SIZE), 2)
+
         match self.piece:
             case "w_pawn":
                 WIN.blit(WHITE_PAWN, self.piece_coord())
@@ -159,25 +166,38 @@ class Square:
         elif self.piece in ["w_bishop", "b_bishop"]:
             return ((self.get_position()[0] + 8), (self.get_position()[1] + 4))
         
+        elif self.piece in ["w_queen", "b_queen"]:
+            return ((self.get_position()[0] + 5), (self.get_position()[1] + 7))
+        
+        elif self.piece in ["w_rook", "b_rook"]:
+            return ((self.get_position()[0] + 10), (self.get_position()[1] + 6))
+        
         else:
             return ((self.get_position()[0] + 8), (self.get_position()[1] + 4)) 
+        
+    def select(self):
+        self.border = GREEN
+    
+    def deselect(self):
+        self.border = None
 
 class Board:
     def __init__(self):
-        self.length = 8 * SQUARE_LENGTH
+        self.size = 8 * SQUARE_SIZE
         self.squares = []
 
-        square_list =  ['a8', 'b8', 'c8', 'd8', 'e8', 'f8', 'g8', 'h8', 
-                        'a7', 'b7', 'c7', 'd7', 'e7', 'f7', 'g7', 'h7', 
-                        'a6', 'b6', 'c6', 'd6', 'e6', 'f6', 'g6', 'h6', 
-                        'a5', 'b5', 'c5', 'd5', 'e5', 'f5', 'g5', 'h5', 
-                        'a4', 'b4', 'c4', 'd4', 'e4', 'f4', 'g4', 'h4', 
-                        'a3', 'b3', 'c3', 'd3', 'e3', 'f3', 'g3', 'h3', 
-                        'a2', 'b2', 'c2', 'd2', 'e2', 'f2', 'g2', 'h2', 
-                        'a1', 'b1', 'c1', 'd1', 'e1', 'f1', 'g1', 'h1']     
+        self.board =   [['a8', 'b8', 'c8', 'd8', 'e8', 'f8', 'g8', 'h8'], 
+                        ['a7', 'b7', 'c7', 'd7', 'e7', 'f7', 'g7', 'h7'], 
+                        ['a6', 'b6', 'c6', 'd6', 'e6', 'f6', 'g6', 'h6'], 
+                        ['a5', 'b5', 'c5', 'd5', 'e5', 'f5', 'g5', 'h5'], 
+                        ['a4', 'b4', 'c4', 'd4', 'e4', 'f4', 'g4', 'h4'], 
+                        ['a3', 'b3', 'c3', 'd3', 'e3', 'f3', 'g3', 'h3'], 
+                        ['a2', 'b2', 'c2', 'd2', 'e2', 'f2', 'g2', 'h2'], 
+                        ['a1', 'b1', 'c1', 'd1', 'e1', 'f1', 'g1', 'h1']]     
         
-        for square_name in square_list:
-            self.squares.append(Square(square_name))
+        for rank in self.board:
+            for square_name in rank:
+                self.squares.append(Square(square_name))
 
         self.reset_board()
                 
@@ -220,12 +240,13 @@ class Board:
                 square.piece = "b_king"
     
 
+
 def main():
     # Event loop
     running = True
 
-    board = Board()
-    
+    chess_board = Board()
+    squares_selected = []
     #pawn.set_colorkey(BLACK)
     #pawn = pygame.transform.scale(pawn, PIECE_SIZE)
 
@@ -236,17 +257,46 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
 
+            if event.type == pygame.MOUSEBUTTONDOWN:           # left click
+                    pos_x, pos_y = pygame.mouse.get_pos()
+                    col = pos_x // SQUARE_SIZE
+                    row = pos_y // SQUARE_SIZE
+                    square_name = chess_board.board[row][col]
+
+                    if len(squares_selected) == 0:
+                        squares_selected.append(chess_board.get_square(square_name))
+                        if squares_selected[0].piece:
+                            print(squares_selected[0].name)
+                            piece = squares_selected[0].piece
+                            squares_selected[0].select()
+                            print(piece)
+
+                    elif squares_selected[0] == chess_board.get_square(square_name):
+                        squares_selected[0].deselect()
+                        squares_selected.remove(squares_selected[0])
+                        
+                    else:
+                        squares_selected[0].deselect()
+                        squares_selected.remove(squares_selected[0])
+                        squares_selected.append(chess_board.get_square(square_name))
+                        if squares_selected[0].piece:
+                            print(squares_selected[0].name)
+                            piece = squares_selected[0].piece
+                            squares_selected[0].select()
+                            print(piece)
+
+                        
+                    
+                            
+                        
+
         WIN.fill(BLACK)                         # Black Background
-        # square = board.get_square("d2")
-        # square.img.blit(pawn, (10, 10))
         
-        #board.reset_pos()
-        board.draw()
-        #pygame.time.delay()
+        chess_board.draw()
         pygame.display.update()
 
     pygame.quit()
-    #print(board.get_square("d2").img)
+
 
 if __name__ == "__main__":
     main()
